@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font: 16px Arial;  
+  background: linear-gradient(to left, rgb(233, 69, 102), rgb(15, 218, 167));
+}
+p {
+    font-family: verdana;
+    font-size: 20px;
+}
+h2 {
+    color: rgb(217, 217, 223);
+    margin-left: 20px;
+    text-align: center;
+}
+/*the container must be positioned relative:*/
+.autocomplete {
+  position: relative;
+  display: inline-block;
+}
+
+input {
+  border: 1px solid transparent;
+  background-color: #f1f1f1;
+  padding: 10px;
+  font-size: 16px;
+}
+
+input[type=text] {
+  background-color: #f1f1f1;
+  width: 100%;
+  text-align: center;
+}
+  
+
+input[type=submit] {
+  background-color: rgb(56, 222, 228);
+  color: #fff;
+  cursor: pointer;
+}
+
+.autocomplete-items {
+  position: absolute;
+  border: 1px solid #d4d4d4;
+  border-bottom: none;
+  border-top: none;
+  z-index: 99;
+  /*position the autocomplete items to be the same width as the container:*/
+  top: 100%;
+  left: 0;
+  right: 0;
+}
+
+.autocomplete-items div {
+  padding: 10px;
+  cursor: pointer;
+  background-color: #fff; 
+  border-bottom: 1px solid #d4d4d4; 
+}
+
+/*when hovering an item:*/
+.autocomplete-items div:hover {
+  background-color: #e9e9e9; 
+}
+
+/*when navigating through the items using the arrow keys:*/
+.autocomplete-active {
+  background-color: DodgerBlue !important; 
+  color: #ffffff; 
+}
+</style>
+</head>     
+<body>
+
+<h2>Book Recommendation System</h2>
+
+<p>Start searching:</p>
+
+<!--Make sure the form has the autocomplete function switched off:-->
+<div class="login">
+    <form autocomplete="off" action="/recommend" method="post">
+        <div class="autocomplete" style="width:300px;">
+          <input id="myInput" type="text" name="myBook" placeholder="Book">
+        </div>
+        <div class="button_cont" align="center"><a class="button_css" target="_blank" rel="nofollow noopener">
+            <button type="submit" class="btn btn-primary btn-block btn-large"><strong>recommend</strong></button></a>
+        </div> 
+    </form>
+      <div><p>{{output}}</p></div>
+</div>
+
+<script>
+function autocomplete(inp, arr) {
+  /*the autocomplete function takes two arguments,
+  the text field element and an array of possible autocompleted values:*/
+  var currentFocus;
+  /*execute a function when someone writes in the text field:*/
+  inp.addEventListener("input", function(e) {
+      var a, b, i, val = this.value;
+      /*close any already open lists of autocompleted values*/
+      closeAllLists();
+      if (!val) { return false;}
+      currentFocus = -1;
+      /*create a DIV element that will contain the items (values):*/
+      a = document.createElement("DIV");
+      a.setAttribute("id", this.id + "autocomplete-list");
+      a.setAttribute("class", "autocomplete-items");
+      /*append the DIV element as a child of the autocomplete container:*/
+      this.parentNode.appendChild(a);
+      /*for each item in the array...*/
+      for (i = 0; i < arr.length; i++) {
+        /*check if the item starts with the same letters as the text field value:*/
+        if (arr[i].substr(0, val.length).toUpperCase() == val.toUpperCase()) {
+          /*create a DIV element for each matching element:*/
+          b = document.createElement("DIV");
+          /*make the matching letters bold:*/
+          b.innerHTML = "<strong>" + arr[i].substr(0, val.length) + "</strong>";
+          b.innerHTML += arr[i].substr(val.length);
+          /*insert a input field that will hold the current array item's value:*/
+          b.innerHTML += "<input type='hidden' value='" + arr[i] + "'>";
+          /*execute a function when someone clicks on the item value (DIV element):*/
+          b.addEventListener("click", function(e) {
+              /*insert the value for the autocomplete text field:*/
+              inp.value = this.getElementsByTagName("input")[0].value;
+              /*close the list of autocompleted values,
+              (or any other open lists of autocompleted values:*/
+              closeAllLists();
+          });
+          a.appendChild(b);
+        }
+      }
+  });
+  /*execute a function presses a key on the keyboard:*/
+  inp.addEventListener("keydown", function(e) {
+      var x = document.getElementById(this.id + "autocomplete-list");
+      if (x) x = x.getElementsByTagName("div");
+      if (e.keyCode == 40) {
+        /*If the arrow DOWN key is pressed,
+        increase the currentFocus variable:*/
+        currentFocus++;
+        /*and and make the current item more visible:*/
+        addActive(x);
+      } else if (e.keyCode == 38) { //up
+        /*If the arrow UP key is pressed,
+        decrease the currentFocus variable:*/
+        currentFocus--;
+        /*and and make the current item more visible:*/
+        addActive(x);
+      } else if (e.keyCode == 13) {
+        /*If the ENTER key is pressed, prevent the form from being submitted,*/
+        e.preventDefault();
+        if (currentFocus > -1) {
+          /*and simulate a click on the "active" item:*/
+          if (x) x[currentFocus].click();
+        }
+      }
+  });
+  function addActive(x) {
+    /*a function to classify an item as "active":*/
+    if (!x) return false;
+    /*start by removing the "active" class on all items:*/
+    removeActive(x);
+    if (currentFocus >= x.length) currentFocus = 0;
+    if (currentFocus < 0) currentFocus = (x.length - 1);
+    /*add class "autocomplete-active":*/
+    x[currentFocus].classList.add("autocomplete-active");
+  }
+  function removeActive(x) {
+    /*a function to remove the "active" class from all autocomplete items:*/
+    for (var i = 0; i < x.length; i++) {
+      x[i].classList.remove("autocomplete-active");
+    }
+  }
+  function closeAllLists(elmnt) {
+    /*close all autocomplete lists in the document,
+    except the one passed as an argument:*/
+    var x = document.getElementsByClassName("autocomplete-items");
+    for (var i = 0; i < x.length; i++) {
+      if (elmnt != x[i] && elmnt != inp) {
+        x[i].parentNode.removeChild(x[i]);
+      }
+    }
+  }
+  /*execute a function when someone clicks in the document:*/
+  document.addEventListener("click", function (e) {
+      closeAllLists(e.target);
+  });
+}
+
+/*Arrays containing all the book names:*/
+var book1 = ["Salem's Lot", "Tis (Frank McCourt, #2)", '1421: The Year China Discovered America', '1776', '1984', 'A Bend in the River', 'A Bend in the Road', 'A Brief History of Time', 'A Briefer History of Time', 'A Case of Need', 'A Christmas Carol', 'A Christmas Carol and Other Christmas Writings', 'A Fine Balance', 'A Great and Terrible Beauty (Gemma Doyle, #1)', 'A Heartbreaking Work of Staggering Genius', 'A History of God: The 4,000-Year Quest of Judaism, Christianity, and Islam', 'A History of the World in 6 Glasses', 'A Home at the End of the World', 'A House for Mr Biswas', 'A Lesson Before Dying', 'A Little Princess', 'A Living Nightmare (Cirque Du Freak, #1)', 'A Man Without a Country', 'A Map of the World', "A Midsummer Night's Dream", 'A Million Little Pieces', 'A Modest Proposal and Other Satirical Works', 'A Moveable Feast', 'A Painted House', "A People's History of the United States", 'A Portrait of the Artist as a Young Man', 'A Prayer for Owen Meany', 'A Raisin in the Sun', 'A Room with a View', 'A Separate Peace', 'A Short History of Nearly Everything', 'A Son of the Circus', 'A Spot of Bother', "A Supposedly Fun Thing I'll Never Do Again:  Essays and Arguments", 'A Tale of Two Cities', 'A Virtuous Woman', 'A Walk in the Woods', 'A Walk to Remember', 'A Widow for One Year', 'A Woman of Substance (Emma Harte Saga #1)', 'About a Boy', 'Agamemnon (Oresteia, #1)', "Ahab's Wife, or The Star-Gazer", 'Airframe', 'All Families are Psychotic', "All the King's Men", 'All the Names', 'All-of-a-Kind Family (All-of-a-Kind Family, #1)', 'Allies of the Night (Cirque du Freak, #8)', "America (The Book): A Citizen's Guide to Democracy Inaction", 'American Gods (American Gods, #1)', 'Amsterdam', 'An Ideal Husband', 'Anansi Boys', 'Angels and Demons  (Robert Langdon, #1)', "Anil's Ghost", 'Animal Farm', 'Animal Farm / 1984', 'Anne Frank Remembered: The Story of the Woman Who Helped to Hide the Frank Family', 'Anne Frank: Beyond the Diary - A Photographic Remembrance', 'Anne of Green Gables (Anne of Green Gables, #1)', 'Another Bullshit Night in Suck City', 'Another Roadside Attraction', 'Anthem', 'Antigone (The Theban Plays, #3)', 'As the Crow Flies', 'Assassination Vacation', 'Atlas Shrugged', 'Atonement', 'Awakening the Buddha Within: Tibetan Wisdom for the Western World', 'Bagombo Snuff Box', 'Baltasar and Blimunda', 'Barrel Fever: Stories and Essays', 'Bel Canto', 'Beloved', 'Betsy-Tacy (Betsy-Tacy, #1)', 'Birdsong', 'Black Beauty', 'Black and Blue', 'Bleach, Volume 01', 'Bleach, Volume 15', 'Bleachers', 'Blind Willow, Sleeping Woman', 'Blindness', 'Blink', 'Blue Like Jazz: Nonreligious Thoughts on Christian Spirituality', 'Blue Ocean Strategy: How To Create Uncontested Market Space And Make The Competition Irrelevant', 'Bluebeard', 'Book of the Dead (Kay Scarpetta, #15)', 'Boy: Tales of Childhood', 'Brave New World', 'Brave New World / Brave New World Revisited', 'Brave New World Revisited ', 'Breakfast of Champions', 'Breaking the Spell: Religion as a Natural Phenomenon', 'Breath, Eyes, Memory', 'Bridge to Terabithia', 'Brief Interviews with Hideous Men', 'Brokeback Mountain', 'Built to Last: Successful Habits of Visionary Companies', 'Burmese Days', 'By the River Piedra I Sat Down and Wept', 'By the Shores of Silver Lake  (Little House, #5)', 'Cane River', 'Cannery Row', "Carrie / 'Salem's Lot / The Shining", 'Carter Beats the Devil', 'Casino Royale (James Bond, #1)', 'Cause of Death (Kay Scarpetta, #7)', 'Chapterhouse: Dune (Dune Chronicles #6)', 'Charlie and the Chocolate Factory (Charlie Bucket, #1)', 'Charlie and the Great Glass Elevator (Charlie Bucket, #2)', 'Children of Dune (Dune Chronicles #3)', 'City of Glass (The New York Trilogy, #1)', 'City of the Beasts (Eagle and Jaguar, #1)', 'Cloudy With a Chance of Meatballs', 'Code to Zero', 'Collapse: How Societies Choose to Fail or Succeed', 'Comfort Me with Apples: More Adventures at the Table', 'Complete Works of Oscar Wilde', "Complications: A Surgeon's Notes on an Imperfect Science", 'Confessions of a Shopaholic (Shopaholic, #1)', 'Confessions of an Economic Hit Man', 'Congo', 'Consider the Lobster and Other Essays', "Corelli's Mandolin", 'Cover Her Face (Adam Dalgliesh #1)', 'Cradle and All', 'Cradle to Cradle: Remaking the Way We Make Things', 'Crime and Punishment', 'Crossing to Safety', 'Crow Lake', 'Cry, the Beloved Country', 'Cryptonomicon', 'Daniel Deronda', 'Danny the Champion of the World', 'Darkness', "Darwin's Dangerous Idea: Evolution and the Meanings of Life", 'Deadeye Dick', 'Dear John', 'Deception Point', 'Deerskin', 'Demons', 'Desert Flower', 'Diamonds Are Forever (James Bond, #4)', 'Digging to America', "Dirk Gently's Holistic Detective Agency (Dirk Gently #1)", 'Disclosure', 'Disgrace', 'Dispatches', 'Do Androids Dream of Electric Sheep?', 'Doctor No (James Bond, #6)', 'Don Quixote', "Don't Make Me Think: A Common Sense Approach to Web Usability", "Dr. Seuss's ABC: An Amazing Alphabet Book! (Bright and Early Board Books)", 'Dragonfly in Amber (Outlander, #2)', 'Dreamland', 'Drowning Ruth', 'Dune Messiah (Dune Chronicles #2)', 'East of Eden', 'Eaters of the Dead', 'Eats, Shoots and Leaves: The Zero Tolerance Approach to Punctuation', 'Economics in One Lesson: The Shortest and Surest Way to Understand Basic Economics', 'Eiger Dreams: Ventures Among Men and Mountains', 'Eleven Minutes', 'Embroideries', 'Emily of New Moon (Emily, #1)', 'Emma', 'Enchantment', "Ender's Shadow (Ender's Shadow, #1)", 'Enduring Love', 'Endymion (Hyperion Cantos, #3)', 'Ethan Frome', 'Even Cowgirls Get the Blues', 'Everyday Italian: 125 Simple and Delicious Recipes', 'Execution: The Discipline of Getting Things Done', 'Extremely Loud and Incredibly Close', 'Fahrenheit 451', 'Fall on Your Knees', 'Falling Angels', 'Fantastic Mr. Fox', 'Farewell, My Lovely (Philip Marlowe, #2)', 'Farmer Boy (Little House, #3)', 'Fast Food Nation: The Dark Side of the All-American Meal', 'Fear and Loathing in Las Vegas', "Fear and Loathing on the Campaign Trail '72", 'Fear of Flying', 'Fever Pitch', 'Fierce Invalids Home from Hot Climates', 'Fight Club', 'Fire Sea (The Death Gate Cycle, #3)', 'First They Killed My Father: A Daughter of Cambodia Remembers', 'Five Little Peppers and How They Grew', 'Forever Amber ', 'Forever in Blue: The Fourth Summer of the Sisterhood (Sisterhood, #4)', 'Founding Brothers: The Revolutionary Generation', 'Four Blondes', 'Four to Score (Stephanie Plum, #4)'];
+var book2 = ['Freak the Mighty (Freak The Mighty, #1)', 'Freakonomics: A Rogue Economist Explores the Hidden Side of Everything (Freakonomics, #1)', 'Fried Green Tomatoes at the Whistle Stop Cafe', 'From Beirut to Jerusalem', "From Potter's Field (Kay Scarpetta, #6)", 'From Russia With Love (James Bond, #5)', 'From the Mixed-Up Files of Mrs. Basil E. Frankweiler', 'Fullmetal Alchemist, Vol. 1 (Fullmetal Alchemist, #1)', 'Galápagos', 'Gates of Fire: An Epic Novel of the Battle of Thermopylae', 'Generation X: Tales for an Accelerated Culture', 'Genome: the Autobiography of a Species in 23 Chapters', 'Getting Things Done: The Art of Stress-Free Productivity', 'Ghostwritten', "Giada's Family Dinners", 'Girl with a Pearl Earring', 'Girlfriend in a Coma', 'Girls in Pants: The Third Summer of the Sisterhood (Sisterhood, #3)', 'Glamorama', 'God Bless You, Dr. Kevorkian', 'God Bless You, Mr. Rosewater', 'Going After Cacciato', 'Going Solo', 'Goldfinger (James Bond, #7)', "Gravity's Rainbow", 'Great Expectations', "Gulliver's Travels", 'Guns, Germs, and Steel: The Fates of Human Societies', 'Half Asleep in Frog Pajamas', 'Hamlet', 'Hard Eight (Stephanie Plum, #8)', 'Hard Times', 'Haroun and the Sea of Stories (Khalifa Brothers, #1)', 'Harry Potter Boxed Set, Books 1-5 (Harry Potter, #1-5)', 'Harry Potter Collection (Harry Potter, #1-6)', 'Harry Potter Schoolbooks Box Set: Two Classic Books from the Library of Hogwarts School of Witchcraft and Wizardry', 'Harry Potter and the Goblet of Fire (Harry Potter, #4)', 'Harry Potter and the Half-Blood Prince (Harry Potter, #6)', 'Harry Potter and the Order of the Phoenix (Harry Potter, #5)', 'Harry Potter and the Prisoner of Azkaban (Harry Potter, #3)', "Harry Potter and the Sorcerer's Stone (Harry Potter, #1)", "Hatchet (Brian's Saga, #1)", 'Heart of Darkness', 'Heidi', 'Here on Earth', 'Heretics of Dune (Dune Chronicles #5)', 'Herzog', 'Hey Nostradamus!', 'High Five (Stephanie Plum, #5)', 'His Excellency: George Washington', 'Hocus Pocus', 'Holidays on Ice', 'Holy Cow: An Indian Adventure', 'Homage to Catalonia', 'Horton Hears a Who!', 'Hot Six (Stephanie Plum, #6)', 'How We Are Hungry', 'How to Be Good', 'How to Make Love Like a Porn Star: A Cautionary Tale', 'How to Stop Worrying and Start Living', 'How to Win Friends and Influence People', 'Howards End', 'Howl and Other Poems', "Howl's Moving Castle (Howl's Moving Castle, #1)", 'Hunters of the Dusk (Cirque Du Freak, #7)', 'I Can Read With My Eyes Shut!', 'I Feel Bad about My Neck: And Other Thoughts on Being a Woman', 'I Hope They Serve Beer in Hell (Tucker Max, #1)', 'I Like You: Hospitality Under the Influence', 'I am Charlotte Simmons', "I'm a Stranger Here Myself: Notes on Returning to America after Twenty Years Away", 'Icy Sparks', 'Ilium (Ilium, #1)', 'In Our Time', "In Search of Excellence: Lessons from America's Best-Run Companies", 'In a Sunburned Country', "In the Company of Cheerful Ladies (No. 1 Ladies' Detective Agency, #6)", 'In the Lake of the Woods', 'In the Skin of a Lion', 'Infinite Jest', 'Interpreter of Maladies', 'Into Thin Air: A Personal Account of the Mount Everest Disaster', 'Into the Wild', 'Invisible Cities', 'Inés of My Soul', 'Island', 'Islands in the Stream', "It's Not About the Bike: My Journey Back to Life", 'Ivanhoe', 'J.R.R. Tolkien 4-Book Boxed Set: The Hobbit and The Lord of the Rings', 'Jack: Straight from the Gut', 'Jackdaws', 'Jailbird', 'James and the Giant Peach', 'Jesus Freaks: Stories of Those Who Stood for Jesus, the Ultimate Jesus Freaks (Jesus Freaks, #1)', 'Jewel', 'Jitterbug Perfume', 'Job: A Comedy of Justice', 'John Adams', 'Jurassic Park (Jurassic Park, #1)', 'Kafka on the Shore', 'Keep the Aspidistra Flying', 'Killers of the Dawn (Cirque Du Freak, #9)', 'Killing Yourself to Live: 85% of a True Story', 'King Rat (Asian Saga, #4)', "Kurt Vonnegut's Cat's Cradle (Modern Critical Interpretations)", 'La Dame aux Camélias', 'Last Chance Saloon', 'Last Chance to See', 'Last Orders', 'Less Than Zero', 'Leviathan', "Liar's Poker", 'Libra', 'Life and Times of Michael K', 'Life of Pi', "Life, the Universe and Everything (Hitchhiker's Guide, #3)", 'Like Water for Chocolate', 'Lipstick Jungle', 'Little Altars Everywhere', 'Little House in the Big Woods (Little House, #1)', 'Little Town on the Prairie  (Little House, #7)', 'Little Women (Little Women, #1)', 'Live and Let Die (James Bond, #2)', 'Lolita', 'Longitude: The True Story of a Lone Genius Who Solved the Greatest Scientific Problem of His Time', 'Lord of the Flies', 'Lord of the Shadows (Cirque Du Freak, #11)', 'Lost Horizon', 'Love in the Time of Cholera', 'Loving What Is: Four Questions That Can Change Your Life', 'Lucy Sullivan Is Getting Married', 'Lunar Park', 'Lysistrata', 'Macbeth', 'Madame Bovary', "Man's Search for Meaning", 'Mariel of Redwall (Redwall, #4)', 'Marina', 'Marlfox (Redwall, #11)', 'Martin Chuzzlewit', 'Maurice', 'Maximum City: Bombay Lost and Found', 'Mayflower: A Story of Courage, Community, and War', 'Me Talk Pretty One Day', 'Memoirs of a Geisha', 'Memories of My Melancholy Whores', 'Men Are from Mars, Women Are from Venus', 'Message in a Bottle', 'Messenger of Truth (Maisie Dobbs, #4)', 'Metamorphoses', 'Microserfs', 'Middlesex', 'Midnight for Charlie Bone (The Children of the Red King, #1)', 'Midwives', "Moloka'i", 'Moneyball: The Art of Winning an Unfair Game', 'Moo, Baa, La La La!', 'Moon Palace', 'Moonraker (James Bond, #3)', "Morality for Beautiful Girls (No. 1 Ladies' Detective Agency, #3)", 'Mornings on Horseback', "Mostly Harmless (Hitchhiker's Guide to the Galaxy, #5)", 'Mother Night', 'Mother of Pearl', 'Motor Mouth (Alex Barnaby #2)', 'Mrs. Frisby and the Rats of NIMH (Rats of NIMH, #1)', 'My Friend Leonard', 'My Life in France', 'My Name is Red', 'Naked', 'Naked Lunch', 'Narcissus and Goldmund', 'Neither Here nor There: Travels in Europe', 'Never Let Me Go', 'Next', 'Nickel and Dimed: On (Not) Getting By in America', 'Night (The Night Trilogy #1)', 'Night Over Water', 'Nine Stories', 'No Logo', 'Notes from a Small Island', 'Oblivion', 'Oedipus Rex  (The Theban Plays, #1)', 'Of Mice and Men', 'Olivia Joules and the Overactive Imagination', 'Olympos (Ilium, #2)', 'On Beauty', "On Her Majesty's Secret Service (James Bond, #11)", 'On the Banks of Plum Creek  (Little House, #4)', 'One Fish, Two Fish, Red Fish, Blue Fish', 'One Hundred Years of Solitude', 'One for the Money (Stephanie Plum, #1)', 'Open House', 'Outcast of Redwall (Redwall, #8)', 'Pale Fire', 'Papillon', 'Paradise', 'Pardonable Lies (Maisie Dobbs, #3)', 'Paris to the Moon', 'Path of the Assassin (Scot Harvath, #2)', 'Pearls of Lutra (Redwall, #9)', 'Perfume: The Story of a Murderer', 'Persepolis 2: The Story of a Return (Persepolis, #2)'];
+var book3 = ['Persepolis, Volume 1', 'Persepolis: The Story of a Childhood (Persepolis, #1)', 'Persuasion', 'Peter and the Shadow Thieves (Peter and the Starcatchers, #2)', 'Phenomenology of Spirit', 'Play It as It Lays', 'Player Piano', "Plum Lovin' (Stephanie Plum, #12.5)", 'Point of Origin (Kay Scarpetta, #9)', 'Pompeii', 'Portrait of a Killer: Jack the Ripper - Case Closed', 'Postmortem (Kay Scarpetta, #1)', 'Practicing the Power of Now: Essential Teachings, Meditations, and Exercises from the Power of Now', 'Predator (Kay Scarpetta, #14)', 'Prep', 'Pride and Prejudice', 'Prophet', 'Pygmalion', 'Pygmalion and My Fair Lady', 'QED: The Strange Theory of Light and Matter', 'Quicksilver (The Baroque Cycle, #1)', 'Rachael Ray 365: No Repeats: A Year of Deliciously Different Dinners', "Rachel's Holiday (Walsh Family, #2)", 'Rainbow Six (Jack Ryan Universe, #10)', 'Raise High the Roof Beam, Carpenters and Seymour: An Introduction', 'Reading Lolita in Tehran', 'Red Prophet (Tales of Alvin Maker, #2)', 'Redwall (Redwall, #1)', 'Regeneration (Regeneration, #1)', 'Reservation Blues', 'Revolting Rhymes', 'Rising Sun', 'Robinson Crusoe', 'Rose Daughter', 'Runaways, Vol. 1: Pride and Joy (Runaways, #1)', 'Sailing Alone Around the Room: New and Selected Poems', 'Salamandastron (Redwall, #5)', 'Salt: A World History', 'Saturday', 'Saving Fish from Drowning', 'Selected Stories', 'Sentimental Education', 'Seven Up (Stephanie Plum, #7)', 'Sex and the City', 'Sex, Drugs, and Cocoa Puffs: A Low Culture Manifesto', 'Shadow Divers', "Shadow of the Giant (Ender's Shadow, #4)", "Shadow of the Hegemon (Ender's Shadow, #2)", 'Shadows of the Empire (Star Wars)', 'Shalimar the Clown', "She's Come Undone", 'Sherlock Holmes: The Complete Novels and Stories, Volume I', 'Shopaholic Takes Manhattan (Shopaholic, #2)', 'Shopaholic Ties the Knot (Shopaholic, #3)', 'Shopaholic and Baby (Shopaholic, #5)', 'Shopaholic and Sister (Shopaholic, #4)', 'Sickened: The Memoir of a Munchausen by Proxy Childhood', 'Sir Gawain and the Green Knight ', 'Six Easy Pieces: Essentials of Physics By Its Most Brilliant Teacher', 'Skinny Legs and All', 'Skipping Christmas', 'Slapstick, or Lonesome No More!', 'Slaughterhouse-Five', 'Slouching Towards Bethlehem', 'Snow Crash', 'Snow Flower and the Secret Fan', "So Long, and Thanks for All the Fish (Hitchhiker's Guide to the Galaxy, #4)", 'Song of Susannah (The Dark Tower, #6)', 'Songbook', 'Songs in Ordinary Time', 'Sons of Destiny (Cirque Du Freak, #12)', "Speaker for the Dead (Ender's Saga, #2)", 'Special Topics in Calamity Physics', 'Sputnik Sweetheart', 'Still Life with Woodpecker', 'Stranger in a Strange Land', 'Stranger than Fiction', 'Suffer the Children', 'Sunshine', 'Superman: Birthright', "Surely You're Joking, Mr. Feynman!: Adventures of a Curious Character", 'Survival in Auschwitz', "Suzanne's Diary for Nicholas", 'Tara Road', 'Teacher Man (Frank McCourt, #3)', 'Team of Rivals: The Political Genius of Abraham Lincoln', "Tears of the Giraffe (No. 1 Ladies' Detective Agency, #2)", 'Ten Apples Up On Top!', 'The 158-Pound Marriage', 'The 48 Laws of Power', 'The Adventures of Huckleberry Finn', 'The Adventures of Sherlock Holmes', 'The Alchemist', 'The Aleph and Other Stories ', 'The Amazing Adventures of Kavalier and Clay', 'The Amber Room', "The America's Test Kitchen Family Cookbook", "The Android's Dream", 'The Andromeda Strain', 'The Atonement Child', 'The Audacity of Hope: Thoughts on Reclaiming the American Dream', 'The Autograph Man', 'The Automatic Millionaire: A Powerful One-Step Plan to Live and Finish Rich', 'The BFG', 'The Barefoot Contessa Cookbook', 'The Baron in the Trees', 'The Beach House', 'The Beautiful and Damned', 'The Bell Jar', 'The Bellmaker (Redwall, #7)', 'The Big Bad Wolf  (Alex Cross, #9)', 'The Big Over Easy (Nursery Crime, #1)', 'The Big Sleep (Philip Marlowe, #1)', 'The Blank Slate: The Modern Denial of Human Nature', 'The Body Farm (Kay Scarpetta, #5)', 'The Bone Collector (Lincoln Rhyme, #1)', 'The Bonfire of the Vanities', 'The Book of Ruth', 'The Bookseller of Kabul', 'The Bourne Identity (Jason Bourne, #1)', 'The Brethren', 'The Broken Wings', 'The Broker', 'The Brooklyn Follies', 'The Broom of the System', 'The Brothers Karamazov', 'The Burden of Proof', 'The Call of the Wild', 'The Canterbury Tales', 'The Cat in the Hat and Other Dr. Seuss Favorites', 'The Catcher in the Rye', 'The Cement Garden', 'The Chamber', 'The Cider House Rules', "The Clan of the Cave Bear (Earth's Children, #1)", 'The Client', 'The Club Dumas', 'The Comfort of Strangers', 'The Complete Anne of Green Gables Boxed Set (Anne of Green Gables, #1-8)', 'The Complete Sherlock Holmes, Vol 2', 'The Complete Short Novels', 'The Complete Short Stories', 'The Confusion (The Baroque Cycle, #2)', 'The Corrections', 'The Count of Monte Cristo', 'The Crying of Lot 49', 'The Curious Incident of the Dog in the Night-Time', 'The Da Vinci Code (Robert Langdon, #2)', 'The Dark Tower (The Dark Tower, #7)', 'The Deep End of the Ocean (Cappadora Family, #1)', 'The Design of Everyday Things', 'The Devil Wears Prada (The Devil Wears Prada, #1)', 'The Devil and Miss Prym (On the Seventh Day, #3)', "The Diamond Age: or, A Young Lady's Illustrated Primer", 'The Divine Comedy', 'The Door Into Summer', 'The Doors of Perception and Heaven and Hell', 'The Drama of the Gifted Child: The Search for the True Self', 'The Drawing of the Three (The Dark Tower, #2)', 'The Egypt Game (Game, #1)', 'The Electric Kool-Aid Acid Test', 'The Elegant Universe: Superstrings, Hidden Dimensions, and the Quest for the Ultimate Theory', 'The Elephant Vanishes', "The Emperor's Children", 'The End of Poverty', 'The Fellowship of the Ring (The Lord of the Rings, #1)', 'The Fifth Mountain', 'The Firm (Penguin Readers, Level 5)', 'The First Four Years  (Little House, #9)', 'The First World War', 'The Five Love Languages of Children', 'The Five People You Meet in Heaven', 'The Fortress of Solitude', 'The Fountainhead', 'The Four Agreements: A Practical Guide to Personal Freedom', 'The Fourth Hand', 'The Game: Penetrating the Secret Society of Pickup Artists', 'The Giraffe and the Pelly and Me', 'The Giver (The Giver, #1)', 'The Glass Castle', 'The God of Small Things', 'The Good Earth (House of Earth, #1)', "The Good Husband of Zebra Drive (No. 1 Ladies' Detective Agency, #8)", 'The Good Soldier', 'The Grapes of Wrath', 'The Great Book of Amber (The Chronicles of Amber, #1-10)', 'The Great Gatsby', 'The Great Train Robbery', 'The Ground Beneath Her Feet', 'The Heart of a Woman', 'The Heart of the Matter', 'The High Window (Philip Marlowe, #3)', 'The Histories', 'The History of Love', 'The History of Sexuality, Volume 1: An Introduction', "The Hitchhiker's Guide to the Galaxy (Hitchhiker's Guide to the Galaxy, #1)", 'The Hobbit', 'The Hound of the Baskervilles', 'The House of the Spirits', 'The Hungry Tide', "The Idiot Girls' Action-Adventure Club: True Tales from a Magnificent and Clumsy Life", 'The Iliad', 'The Iliad/The Odyssey', 'The Informers', 'The Innocent Man: Murder and Injustice in a Small Town'];
+var book4 = ["The Innovator's Dilemma: The Revolutionary Book that Will Change the Way You Do Business (Collins Business Essentials)", 'The Jane Austen Book Club', 'The Johnstown Flood', 'The Joy Luck Club', "The Kalahari Typing School for Men (No. 1 Ladies' Detective Agency, #4)", 'The King of Torts', 'The Known World', 'The Lake of Souls (Cirque Du Freak, #10)', 'The Language Instinct: How the Mind Creates Language', 'The Last Juror', 'The Legend of Luke (Redwall, #12)', 'The List', 'The Long Dark Tea-Time of the Soul (Dirk Gently, #2)', 'The Long Goodbye (Philip Marlowe, #6)', 'The Long Patrol (Redwall, #10)', 'The Long Walk', 'The Long Walk: The True Story of a Trek to Freedom', 'The Long Winter (Little House, #6)', 'The Lorax', 'The Lord of the Rings (The Lord of the Rings, #1-3)', 'The Lord of the Rings: The Art of The Fellowship of the Ring', 'The Lord of the Rings: Weapons and Warfare', 'The Lost Boy (Dave Pelzer #2)', 'The Lost Continent: Travels in Small Town America', 'The Lost World (Jurassic Park, #2)', 'The Lover', 'The Magic Finger (Young Puffin Developing Reader)', 'The Man From St. Petersburg', 'The Man Who Listens to Horses', 'The Men Who Stare at Goats', 'The Mermaid Chair', 'The Metamorphosis and Other Stories', 'The Millionaire Next Door: The Surprising Secrets of Americas Wealthy', 'The Moonstone', "The Moor's Last Sigh", 'The Mother Tongue: English and How It Got That Way', 'The Natural Way to Draw', 'The New York Trilogy', "The No. 1 Ladies' Detective Agency  (No. 1 Ladies' Detective Agency, #1)", 'The Odyssey', 'The Oedipus Cycle: Oedipus Rex/Oedipus at Colonus/Antigone (The Theban Plays, #1–3)', 'The Old Man and the Sea', "The Omnivore's Dilemma: A Natural History of Four Meals", 'The Oresteia  (Ορέστεια, #1-3)', 'The Other Side of the Story', 'The Partner', 'The Path Between the Seas: The Creation of the Panama Canal, 1870-1914', 'The Pearl', 'The People of Sparks (Book of Ember, #2)', 'The Phantom Tollbooth', 'The Physician (Cole Family Trilogy, #1)', 'The Picture of Dorian Gray', 'The Pilgrimage', 'The Pillars of Creation (Sword of Truth, #7)', 'The Pillars of the Earth (The Kingsbridge Series, #1)', "The Pilot's Wife", 'The Plot Against America', 'The Poetry of Pablo Neruda', 'The Poisonwood Bible', 'The Portrait of a Lady', 'The Power and the Glory', 'The Power of Now: A Guide to Spiritual Enlightenment', 'The Power of One (The Power of One, #1)', 'The Pragmatic Programmer: From Journeyman to Master', 'The Prophet', 'The Quiet American', 'The Rainmaker', 'The Rapture of Canaan', 'The Red Pony', 'The Red Tent', 'The Rescue', "The Restaurant at the End of the Universe (Hitchhiker's Guide, #2)", 'The Richest Man in Babylon', "The River (Brian's Saga, #2)", 'The Road', 'The Rules of Attraction', 'The Salmon of Doubt (Dirk Gently, #3)', 'The Sea', 'The Second Summer of the Sisterhood (Sisterhood, #2)', 'The Secret Art of Dr. Seuss', 'The Secret Garden', 'The Shadow Rising (Wheel of Time, #4)', 'The Shadow of the Wind (The Cemetery of Forgotten Books,  #1)', 'The Shipping News', 'The Short Stories', 'The Silmarillion (Middle-Earth Universe)', 'The Sirens of Titan', 'The Smoke Jumper', 'The Snows of Kilimanjaro and Other Stories', 'The Stories of Eva Luna', 'The Street Lawyer', 'The Summons', 'The Sun Also Rises', 'The Taste of Home Cookbook', 'The Terminal Man', 'The Terror', 'The Testament', 'The Thorn Birds', 'The Three Musketeers', 'The Time Machine', 'The Tipping Point: How Little Things Can Make a Big Difference', "The Ultimate Hitchhiker's Guide to the Galaxy", 'The Unbearable Lightness of Being', 'The Universe in a Nutshell', 'The Valkyries', 'The Vampire Prince (Cirque Du Freak, #6)', "The Vampire's Assistant (Cirque Du Freak, #2)", 'The Very Hungry Caterpillar Board Book', 'The View from Saturday', 'The Virgin Blue', 'The Virtue of Selfishness: A New Concept of Egoism', 'The War of Art: Break Through the Blocks and Win Your Inner Creative Battles', 'The War of the Worlds', 'The Water-Method Man', 'The Way the Crow Flies', 'The Wedding (The Notebook, #2)', 'The Westing Game', 'The Wind in the Willows', 'The Winter of Our Discontent', 'The Witches', 'The Woman in White', 'The Woman in the Dunes', 'The Wonderful Story of Henry Sugar and Six More', 'The World According to Garp', 'The World Is Flat: A Brief History of the Twenty-first Century', 'The Year of Magical Thinking', 'The Zahir', 'Them: Adventures with Extremists', 'Think and Grow Rich: The Landmark Bestseller - Now Revised and Updated for the 21st Century', 'Three Men in a Boat (Three Men, #1)', 'Three Weeks With My Brother', 'Three to Get Deadly (Stephanie Plum, #3)', 'Timbuktu', 'Time Enough for Love', 'Timeline', 'Timequake', 'To Have and Have Not', 'To Kill a Mockingbird', 'Trace (Kay Scarpetta, #13)', 'Travels with Charley: In Search of America', 'Treasure Island', 'Trials of Death (Cirque Du Freak, #5)', 'Tropic of Cancer', 'Tropic of Capricorn', 'True Believer (Jeremy Marsh and Lexie Darnell, #1)', 'Truman', 'Trump: The Art of the Deal', 'Truth and Beauty', 'Tuesdays with Morrie', 'Tunnels of Blood (Cirque Du Freak, #3)', 'Twelfth Night', 'Twelve Sharp (Stephanie Plum, #12)', 'Twenty Love Poems and a Song of Despair', "Twenty Years After (The D'Artagnan Romances, #2)", 'Two for the Dough (Stephanie Plum, #2)', 'Unfinished Tales of Númenor and Middle-Earth', 'Unlimited Power : The New Science Of Personal Achievement', 'Until I Find You', 'V for Vendetta', 'V.', 'Vampire Mountain (Cirque Du Freak, #4)', 'Vanity Fair', 'Veronika Decides to Die', 'Villa Incognito', 'Visions of Sugar Plums (Stephanie Plum, #8.5)', 'Waiting for the Barbarians', 'War and Peace', 'Warrior of the Light', 'Watermelon (Walsh Family, #1)', 'Way of the Peaceful Warrior: A Book That Changes Lives', 'Ways of Seeing', 'We Were the Mulvaneys', 'We the Living', 'Welcome to the Monkey House', 'West with the Night', 'What Do You Care What Other People Think?', 'What Is the What', 'What Looks Like Crazy on an Ordinary Day (Idlewild, #1)', 'What to Expect the First Year (What to Expect)', 'Where the Heart Is', 'While I Was Gone', 'White Teeth', 'Who Moved My Cheese?', 'Wild Fire (John Corey, #4)', 'Wild Swans: Three Daughters of China', "Wild at Heart: Discovering the Secret of a Man's Soul", 'Witches Abroad (Discworld, #12; Witches #3)', 'Wizard and Glass (The Dark Tower, #4)', 'Wolves of the Calla (The Dark Tower, #5)', 'Women in Love (Brangwen Family, #2)', 'World War Z: An Oral History of the Zombie War', 'World Without End (The Kingsbridge Series, #2)', 'Wuthering Heights', "Xenocide (Ender's Saga, #3)", 'Year of Wonders', 'You Shall Know Our Velocity!', 'Zen and the Art of Motorcycle Maintenance: An Inquiry Into Values', 'Zodiac', 'number9dream'];
+var bookfinal = book1.concat(book2, book3, book4)
+/*initiate the autocomplete function on the "myInput" element, and pass along the countries array as possible autocomplete values:*/
+autocomplete(document.getElementById("myInput"), bookfinal);
+</script>
+
+</body>
+</html>
